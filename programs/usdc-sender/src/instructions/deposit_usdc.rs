@@ -29,23 +29,24 @@ pub struct DepositUsdc<'info> {
 
     #[account(
         mut,
-        associated_token::mint = mint,
-        associated_token::authority = user
+        token::mint = mint,
+        token::authority = user
     )]
     pub from_ata: Account<'info, TokenAccount>,
 
     #[account(
         init_if_needed,
-        associated_token::mint = mint,
-        associated_token::authority = global_pool,
         payer = user,
+        seeds = [b"token-vault".as_ref()],
+        bump,
+        token::mint = mint,
+        token::authority = global_pool,
     )]
     pub to_ata: Account<'info, TokenAccount>,
 
     #[account(mut)]
     pub user: Signer<'info>,
     pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 

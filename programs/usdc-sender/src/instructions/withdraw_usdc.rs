@@ -27,23 +27,21 @@ pub struct WithdrawUsdc<'info> {
 
     #[account(
         mut,
-        associated_token::mint = mint,
-        associated_token::authority = global_pool
+        token::mint = mint,
+        token::authority = global_pool
     )]
     pub from_ata: Account<'info, TokenAccount>,
 
     #[account(
-        init_if_needed,
-        associated_token::mint = mint,
-        associated_token::authority = user,
-        payer = user,
+        mut,
+        token::mint = mint,
+        token::authority = user,
     )]
     pub to_ata: Account<'info, TokenAccount>,
 
     #[account(mut)]
     pub user: Signer<'info>,
     pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 

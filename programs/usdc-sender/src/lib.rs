@@ -7,7 +7,7 @@ pub mod state;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("7pB3zj3voieg4msvT7oTxc6xRDDPDjiCy3J4Sr4ogPaC");
+declare_id!("F7gCMvxedC5XnCJR6pT9JL8rQ13s6K2NzcwW3CWbnkrs");
 
 #[program]
 pub mod usdc_sender {

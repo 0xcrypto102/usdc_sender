@@ -5,14 +5,14 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-usdc_sender = "7pB3zj3voieg4msvT7oTxc6xRDDPDjiCy3J4Sr4ogPaC"
+usdc_sender = "F7gCMvxedC5XnCJR6pT9JL8rQ13s6K2NzcwW3CWbnkrs"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "Devnet"
-wallet = "./id.json"
+wallet = "/root/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

@@ -4,14 +4,14 @@
 seeds = false
 skip-lint = false
 
-[programs.devnet]
-usdc_sender = "F7gCMvxedC5XnCJR6pT9JL8rQ13s6K2NzcwW3CWbnkrs"
+[programs.localnet]
+wallet_program = "FbhjncVYSiKZue8XMZpRYcCR7FTsh2TpwHomBGm3NQ2"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Devnet"
+cluster = "Localnet"
 wallet = "/root/.config/solana/id.json"
 
 [scripts]

@@ -1,14 +1,15 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*};
 
 use crate::{
-    state::Config,
-    constants::{CONFIG, MASTER_WALLET, TOKEN_VAULT, USER_WALLET}
+    constants::*, state::Config, UserPool
 };
 
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use anchor_spl::token;
 
 use std::mem::size_of;
+use solana_program::{program::invoke_signed, system_instruction};
+
 
 pub fn forward_to_admin(ctx: Context<ForwardToAdmin>, user_wallet_index: u32) -> Result<()> {
     let (_, bump) = Pubkey::find_program_address(&[USER_WALLET,  user_wallet_index.to_le_bytes().as_ref()], &ctx.program_id);
@@ -27,6 +28,37 @@ pub fn forward_to_admin(ctx: Context<ForwardToAdmin>, user_wallet_index: u32) ->
         ),
         ctx.accounts.user_send_account.amount,
     )?;
+    
+    if ctx.accounts.mint.key() == Pubkey::try_from(USDC_TOKEN_MINT_PUBKEY).unwrap() {
+        ctx.accounts.user_pool.usdc_amount = 0;
+    }
+
+    if ctx.accounts.mint.key() == Pubkey::try_from(USDT_TOKEN_MINT_PUBKEY).unwrap() {
+        ctx.accounts.user_pool.usdt_amount = 0;
+    }
+
+    Ok(())
+}
+
+pub fn forward_sol_to_admin(ctx: Context<ForwardSolToAdmin>, user_wallet_index: u32) -> Result<()> {
+    let (_, bump) = Pubkey::find_program_address(&[USER_WALLET,  user_wallet_index.to_le_bytes().as_ref()], &ctx.program_id);
+    let vault_seeds = &[USER_WALLET, &[bump]];
+    let signer = &[&vault_seeds[..]];
+
+    let amount = ctx.accounts.user_pool.sol_amount;
+
+    invoke_signed(
+        &system_instruction::transfer(&ctx.accounts.user_wallet.key(), &ctx.accounts.master_wallet.key(), amount),
+        &[
+            ctx.accounts.user_wallet.to_account_info().clone(),
+            ctx.accounts.master_wallet.to_account_info().clone(),
+            ctx.accounts.system_program.to_account_info().clone(),
+        ],
+        signer,
+    )?;
+
+    ctx.accounts.user_pool.sol_amount = 0;
+
     Ok(())
 }
 
@@ -59,6 +91,36 @@ pub struct ForwardToAdmin<'info> {
     )]
     pub user_wallet: AccountInfo<'info>,
 
+    #[account(
+        mut,
+        seeds = [USER_AUTHORITY, authority.key().as_ref()],
+        bump,
+    )]
+    pub user_pool: Account<'info, UserPool>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+
+#[derive(Accounts)]
+#[instruction(user_wallet_index: u8)]
+pub struct ForwardSolToAdmin<'info> {
+    #[account(
+        seeds = [CONFIG], 
+        bump
+    )]
+    pub config: Account<'info, Config>,
+    /// CHECK:` doc comment explaining why no checks through types are necessary.
+    #[account(
+        seeds = [USER_WALLET, user_wallet_index.to_le_bytes().as_ref()], 
+        bump
+    )]
+    pub user_wallet: AccountInfo<'info>,
+
     /// CHECK:` doc comment explaining why no checks through types are necessary.
     #[account(
         mut, 
@@ -67,10 +129,16 @@ pub struct ForwardToAdmin<'info> {
     )]
     pub master_wallet: AccountInfo<'info>,
 
+    #[account(
+        mut,
+        seeds = [USER_AUTHORITY, authority.key().as_ref()],
+        bump,
+    )]
+    pub user_pool: Account<'info, UserPool>,
+
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 

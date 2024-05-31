@@ -1,14 +1,16 @@
 use anchor_lang::prelude::*;
 
-use crate::{
-    state::Config,
-    constants::{CONFIG, MASTER_WALLET, TOKEN_VAULT, USER_WALLET}
+use {
+    crate::{
+        constants::*, state::*, error::*,
+    },
+    anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction},
+    anchor_spl::{
+        associated_token::AssociatedToken,
+        token::{self, Mint, Token, TokenAccount, Transfer as SplTransfer},
+    },
 };
 
-use anchor_spl::token::{Mint, Token, TokenAccount};
-use anchor_spl::token;
-
-use std::mem::size_of;
 pub fn withdraw(ctx: Context<Withdraw>,user_wallet_index: u8, amount: u64) -> Result<()> {
     let (_, bump) = Pubkey::find_program_address(&[MASTER_WALLET], &ctx.program_id);
     let vault_seeds = &[MASTER_WALLET, &[bump]];
@@ -28,6 +30,35 @@ pub fn withdraw(ctx: Context<Withdraw>,user_wallet_index: u8, amount: u64) -> Re
     )?;
     Ok(())
 }
+
+pub fn withdraw_usdc(ctx: Context<WithdrawUsdc>, amount: u64) -> Result<()> {
+    let destination = &ctx.accounts.to_ata;
+    let source = &ctx.accounts.from_ata;
+    let token_program = &ctx.accounts.token_program;
+    let authority = &ctx.accounts.config;
+    let user_pool = &mut ctx.accounts.user_pool;
+
+    // Transfer tokens from taker to initializer
+    let cpi_accounts = SplTransfer {
+        from: source.to_account_info().clone(),
+        to: destination.to_account_info().clone(),
+        authority: authority.to_account_info().clone(),
+    };
+
+    let cpi_program = token_program.to_account_info();
+    let seeds = &[CONFIG, &[ctx.bumps.config]];
+    let signers = &[&seeds[..]];
+
+    token::transfer(
+        CpiContext::new_with_signer(cpi_program, cpi_accounts, signers),
+        amount,
+    )?;
+
+    user_pool.credit_amount -= amount;
+
+    Ok(())
+}
+
 
 #[derive(Accounts)]
 #[instruction(user_wallet_index: u8)]
@@ -69,5 +100,45 @@ pub struct Withdraw<'info> {
     pub authority: Signer<'info>,
 
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawUsdc<'info> {
+    #[account(
+        seeds = [CONFIG],
+        bump
+    )]
+    pub config: Account<'info, Config>,
+
+    #[account(
+        mut,
+        seeds = [USER_AUTHORITY, user.key().as_ref()],
+        bump,
+    )]
+    pub user_pool: Account<'info, UserPool>,
+
+    #[account(constraint = mint.key().to_string() == USDC_TOKEN_MINT_PUBKEY)]
+    pub mint: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        associated_token::mint = mint,
+        associated_token::authority = config
+    )]
+    pub from_ata: Account<'info, TokenAccount>,
+
+    #[account(
+        init_if_needed,
+        associated_token::mint = mint,
+        associated_token::authority = user,
+        payer = user,
+    )]
+    pub to_ata: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }

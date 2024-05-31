@@ -8,3 +8,12 @@ pub struct Config {
     pub vault_usdt_account: Pubkey,
     pub bump: u8,
 }
+
+#[account]
+#[derive(Default)]
+pub struct UserPool {
+    pub credit_amount: u64,
+    pub sol_amount: u64,
+    pub usdt_amount: u64,
+    pub usdc_amount: u64
+}

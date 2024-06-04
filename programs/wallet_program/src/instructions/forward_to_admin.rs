@@ -12,8 +12,9 @@ use solana_program::{program::invoke_signed, system_instruction};
 
 
 pub fn forward_to_admin(ctx: Context<ForwardToAdmin>, user_wallet_index: u32) -> Result<()> {
-    let (_, bump) = Pubkey::find_program_address(&[USER_WALLET,  user_wallet_index.to_le_bytes().as_ref()], &ctx.program_id);
-    let vault_seeds = &[USER_WALLET, &[bump]];
+    let binding = user_wallet_index.to_le_bytes();
+    let (_, bump) = Pubkey::find_program_address(&[USER_WALLET,  binding.as_ref()], &ctx.program_id);
+    let vault_seeds = &[USER_WALLET, binding.as_ref(), &[bump]];
     let signer = &[&vault_seeds[..]];
 
     anchor_spl::token::transfer(
@@ -22,7 +23,7 @@ pub fn forward_to_admin(ctx: Context<ForwardToAdmin>, user_wallet_index: u32) ->
             anchor_spl::token::Transfer {
                 from: ctx.accounts.user_send_account.to_account_info(),
                 to: ctx.accounts.vault_receive_account.to_account_info(),
-                authority: ctx.accounts.authority.to_account_info(),
+                authority: ctx.accounts.user_wallet.to_account_info(),
             },
             signer,
         ),
@@ -41,8 +42,9 @@ pub fn forward_to_admin(ctx: Context<ForwardToAdmin>, user_wallet_index: u32) ->
 }
 
 pub fn forward_sol_to_admin(ctx: Context<ForwardSolToAdmin>, user_wallet_index: u32) -> Result<()> {
-    let (_, bump) = Pubkey::find_program_address(&[USER_WALLET,  user_wallet_index.to_le_bytes().as_ref()], &ctx.program_id);
-    let vault_seeds = &[USER_WALLET, &[bump]];
+    let binding = user_wallet_index.to_le_bytes();
+    let (_, bump) = Pubkey::find_program_address(&[USER_WALLET,  binding.as_ref()], &ctx.program_id);
+    let vault_seeds = &[USER_WALLET,binding.as_ref(), &[bump]];
     let signer = &[&vault_seeds[..]];
 
     let amount = ctx.accounts.user_pool.sol_amount;
@@ -63,7 +65,7 @@ pub fn forward_sol_to_admin(ctx: Context<ForwardSolToAdmin>, user_wallet_index: 
 }
 
 #[derive(Accounts)]
-#[instruction(user_wallet_index: u8)]
+#[instruction(user_wallet_index: u32)]
 pub struct ForwardToAdmin<'info> {
     #[account(
         seeds = [CONFIG], 
@@ -82,10 +84,12 @@ pub struct ForwardToAdmin<'info> {
         token::authority = config,
     )]
     pub vault_receive_account: Account<'info, TokenAccount>,
-    pub mint: Account<'info, Mint>,
 
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
     /// CHECK:` doc comment explaining why no checks through types are necessary.
     #[account(
+        mut,
         seeds = [USER_WALLET, user_wallet_index.to_le_bytes().as_ref()], 
         bump
     )]
@@ -93,10 +97,13 @@ pub struct ForwardToAdmin<'info> {
 
     #[account(
         mut,
-        seeds = [USER_AUTHORITY, authority.key().as_ref()],
+        seeds = [USER_AUTHORITY, user.key().as_ref()],
         bump,
     )]
     pub user_pool: Account<'info, UserPool>,
+    /// CHECK:` doc comment explaining why no checks through types are necessary.
+    #[account(mut)]
+    pub user: AccountInfo<'info>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -107,7 +114,7 @@ pub struct ForwardToAdmin<'info> {
 
 
 #[derive(Accounts)]
-#[instruction(user_wallet_index: u8)]
+#[instruction(user_wallet_index: u32)]
 pub struct ForwardSolToAdmin<'info> {
     #[account(
         seeds = [CONFIG], 
@@ -116,6 +123,7 @@ pub struct ForwardSolToAdmin<'info> {
     pub config: Account<'info, Config>,
     /// CHECK:` doc comment explaining why no checks through types are necessary.
     #[account(
+        mut,
         seeds = [USER_WALLET, user_wallet_index.to_le_bytes().as_ref()], 
         bump
     )]

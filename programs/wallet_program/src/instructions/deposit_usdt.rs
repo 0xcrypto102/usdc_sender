@@ -1,32 +1,38 @@
 use {
     crate::{
-        constants::*, state::*
+        constants::*, error::*, state::*
     },
     anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction},
     anchor_spl::{
         associated_token::AssociatedToken,
         token::{self, Mint, Token, TokenAccount, Transfer as SplTransfer},
+    }, 
+    pyth_solana_receiver_sdk::price_update::{
+        get_feed_id_from_hex,
+        PriceUpdateV2,
     },
+    std::mem::size_of,
 };
 use std::str::FromStr;
+use pyth_sdk_solana::load_price_feed_from_account_info;
 
 #[derive(Accounts)]
-#[instruction(user_wallet_index: u8)]
+#[instruction(user_wallet_index: u32)]
 pub struct DepositUsdt<'info> {
     #[account(
         seeds = [CONFIG], 
         bump
     )]
-    pub config: Account<'info, Config>,
+    pub config: Box<Account<'info, Config>>,
 
     #[account(
         init_if_needed,
         payer = user,
-        space = 8 + 8,
+        space = 8 + size_of::<UserPool>(),
         seeds = [USER_AUTHORITY, user.key().as_ref()],
         bump,
     )]
-    pub user_pool: Account<'info, UserPool>,
+    pub user_pool: Box<Account<'info, UserPool>>,
 
     /// CHECK:` doc comment explaining why no checks through types are necessary.
     #[account(
@@ -40,37 +46,39 @@ pub struct DepositUsdt<'info> {
 
     #[account(
         mut,
-        associated_token::mint = mint,
-        associated_token::authority = user
+        token::mint = mint,
+        token::authority = user
     )]
-    pub from_ata: Account<'info, TokenAccount>,
+    pub from_ata: Box<Account<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,
         payer = user,
-        associated_token::mint = mint,
-        associated_token::authority = user_wallet,
+        seeds = [TOKEN_VAULT, user.key.as_ref(), mint.key().as_ref()],
+        bump,
+        token::mint = mint,
+        token::authority = user_wallet,
     )]
-    pub to_ata: Account<'info, TokenAccount>,
+    pub to_ata: Box<Account<'info, TokenAccount>>,
 
-    #[account(address = Pubkey::from_str(USDC_PIRCE_FEED).unwrap() @ ErrorCode::InvalidPriceFeed)]
-    pub usdc_price_feed: AccountInfo<'info>,
-
-    #[account(address = Pubkey::from_str(USDT_PIRCE_FEED).unwrap() @ ErrorCode::InvalidPriceFeed)]
-    pub usdt_price_feed: AccountInfo<'info>,
+    #[account(mut)]
+    pub usdc_price_update:  Account<'info, PriceUpdateV2>,
+    #[account(mut)]
+    pub usdt_price_update:  Account<'info, PriceUpdateV2>,
 
     #[account(mut)]
     pub user: Signer<'info>,
     pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<DepositUsdt>, amount: u64) -> Result<()> {
+pub fn deposit_usdt(ctx: Context<DepositUsdt>,user_wallet_index: u32, amount: u64) -> Result<()> {
     let destination = &ctx.accounts.to_ata;
     let source = &ctx.accounts.from_ata;
     let token_program = &ctx.accounts.token_program;
     let authority = &ctx.accounts.user;
+    let usdt_price_update = &mut ctx.accounts.usdt_price_update;
+    let usdc_price_update = &mut ctx.accounts.usdc_price_update;
 
     // Transfer tokens from taker to initializer
     let cpi_accounts = SplTransfer {
@@ -83,18 +91,20 @@ pub fn handler(ctx: Context<DepositUsdt>, amount: u64) -> Result<()> {
     token::transfer(CpiContext::new(cpi_program, cpi_accounts), amount)?;
 
     // 1-Fetch latest price of usdc
-    let price_usdc_account_info = &ctx.accounts.usdc_price_feed;
-    let usdc_price_feed = load_price_feed_from_account_info( &price_usdc_account_info ).unwrap();
-    let current_timestamp = Clock::get()?.unix_timestamp;
-    let usdc_current_price = usdc_price_feed.get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD).unwrap();
+    let usdc_current_price = usdc_price_update.get_price_no_older_than(
+        &Clock::get()?,
+        MAXIMUM_AGE,
+        &get_feed_id_from_hex(USDC_PIRCE_FEED)?,
+    )?;
 
-    // 2-Fetch latest price of usdt
-    let price_usdt_account_info = &ctx.accounts.usdt_price_feed;
-    let usdt_price_feed = load_price_feed_from_account_info( &price_usdt_account_info ).unwrap();
-    let current_timestamp = Clock::get()?.unix_timestamp;
-    let usdt_current_price = usdt_price_feed.get_price_no_older_than(current_timestamp, STALENESS_THRESHOLD).unwrap();
+    // 2-Fetch latest price of sol
+    let usdt_current_price = usdt_price_update.get_price_no_older_than(
+        &Clock::get()?,
+        MAXIMUM_AGE,
+        &get_feed_id_from_hex(USDT_PIRCE_FEED)?,
+    )?;
 
-    let usdc_amount = amount * u64::try_from(usdt_current_price.price).unwrap() / 10u64.pow(u32::try_from(-usdt_current_price.expo).unwrap()) * 10u64.pow(u32::try_from(-usdc_current_price.expo).unwrap()) / u64::try_from(usdc_current_price.price).unwrap() ;
+    let usdc_amount = amount * u64::try_from(usdt_current_price.price).unwrap() / 10u64.pow(u32::try_from(-usdt_current_price.exponent).unwrap()) * 10u64.pow(u32::try_from(-usdc_current_price.exponent).unwrap()) / u64::try_from(usdc_current_price.price).unwrap() ;
 
 
     ctx.accounts.user_pool.credit_amount += usdc_amount;

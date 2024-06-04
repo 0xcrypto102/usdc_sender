@@ -68,7 +68,6 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(bump: u8)]
 pub struct InitializeUsdc<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,

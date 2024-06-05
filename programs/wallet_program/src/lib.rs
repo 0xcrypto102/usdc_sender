@@ -9,7 +9,7 @@ pub use constants::*;
 use instructions::*;
 pub use state::*;
 
-declare_id!("FciasW8Tc7EgPZ1919ijDeN4S8JbcjqPqFUXruYuYuHy");
+declare_id!("HbHtUUTSrfqJ5BGBC7ydnTRqirh61nYdVe9KYvgPh1G9");
 
 #[program]
 pub mod wallet_program {
@@ -38,12 +38,16 @@ pub mod wallet_program {
         instructions::batch_withdraw(ctx, amount)
     }
 
-    pub fn forward_to_admin(ctx: Context<ForwardToAdmin>,  user_wallet_index: u32) ->  Result<()> {
-        instructions::forward_to_admin(ctx, user_wallet_index)
+    pub fn forward_usdc_to_admin(ctx: Context<ForwardUsdcToAdmin>,  user_wallet_index: u32) ->  Result<()> {
+        instructions::forward_usdc_to_admin(ctx, user_wallet_index)
     }
 
-    pub fn forward_sol_to_admin(ctx: Context<ForwardSolToAdmin>,  user_wallet_index: u32) ->  Result<()> {
-        instructions::forward_sol_to_admin(ctx, user_wallet_index)
+    pub fn forward_usdt_to_admin(ctx: Context<ForwardUsdTtoAdmin>,  user_wallet_index: u32) ->  Result<()> {
+        instructions::forward_usdt_to_admin(ctx, user_wallet_index)
+    }
+
+    pub fn forward_sol_to_admin(ctx: Context<ForwardSolToAdmin>,  user_wallet_index: u32, amount: u64) ->  Result<()> {
+        instructions::forward_sol_to_admin(ctx, user_wallet_index, amount)
     }
 
     pub fn withdraw(ctx: Context<Withdraw>,amount: u64) ->  Result<()> {

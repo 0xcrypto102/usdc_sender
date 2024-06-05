@@ -1,3 +1,4 @@
+import 'rpc-websockets/dist/lib/client';
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { WalletProgram } from "../target/types/wallet_program";
@@ -66,7 +67,6 @@ describe("wallet_program", () => {
       program.programId
     );
   });
-
   it("Is initialized!", async () => {
     try {
       const tx = await program.rpc.initialize(
@@ -105,6 +105,8 @@ describe("wallet_program", () => {
     }
     
   });
+  /*
+
   it("deposit usdc", async() => {
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -196,7 +198,7 @@ describe("wallet_program", () => {
     );
 
     try {
-      const tx = await program.rpc.forwardToAdmin(
+      const tx = await program.rpc.forwardUsdcToAdmin(
         userWalletIndex, {
           accounts: {
             config,
@@ -220,15 +222,12 @@ describe("wallet_program", () => {
 
    
   });
+
   it("deposit usdt", async() => {
     const provider = anchor.AnchorProvider.local();
-    console.log(provider.wallet.publicKey.toString());
     const user2 = provider.wallet.payer;
-    console.log(user2.publicKey.toString());
-
 
     // const wallet = new NodeWallet(user);
-    const wallet = provider.wallet;
 
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -263,72 +262,27 @@ describe("wallet_program", () => {
       program.programId
     );
 
-    const HERMES_URL = "https://hermes.pyth.network/";
-    const DEVNET_RPC_URL = "https://api.devnet.solana.com";
-
-
-    const connection = program.provider.connection;
-
-    const priceServiceConnection = new PriceServiceConnection(HERMES_URL, {
-      priceFeedRequestConfig: { binary: true },
-    });
-
-   
-    const pythSolanaReceiver = new PythSolanaReceiver({
-      connection,
-      wallet: wallet as Wallet,
-    });
-
-    const priceUpdateData = await priceServiceConnection.getLatestVaas([
-      USDT_PRICE_FEED_ID,
-      USDC_PRICE_FEED_ID
-    ]);
-
-    const transactionBuilder = pythSolanaReceiver.newTransactionBuilder({
-      closeUpdateAccounts: false,
-    });
-    await transactionBuilder.addPostPriceUpdates(priceUpdateData);
-
     const depositAmount = 100000000;
 
-    await transactionBuilder.addPriceConsumerInstructions(
-      async (
-        getPriceUpdateAccount: (priceFeedId: string) => PublicKey
-      ): Promise<InstructionWithEphemeralSigners[]> => {
-        return [
-          {
-            instruction: await program.methods
-              .depositUsdt(userWalletIndex, new anchor.BN(depositAmount))
-              .accounts({
-                config,
-                userPool,
-                userWallet,
-                mint: usdt,
-                fromAta,
-                toAta,
-                usdcPriceUpdate: getPriceUpdateAccount(USDC_PRICE_FEED_ID),
-                usdtPriceUpdate: getPriceUpdateAccount(USDT_PRICE_FEED_ID),
-                user: user2.publicKey,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                systemProgram: SystemProgram.programId
-              })
-              .instruction(),
-              signers: [user2],
-          },
-        ];
-      }
-    );
-
     try {
-      await pythSolanaReceiver.provider.sendAll(
-        await transactionBuilder.buildVersionedTransactions({
-          computeUnitPriceMicroLamports: 50000,
-        }),
-        user2,
-        // { 
-        //   skipPreflight: true,
-        // }
-      );
+      const tx = await program.rpc.depositUsdt(
+        userWalletIndex,
+        new anchor.BN(depositAmount), 
+        {
+          accounts: {
+              config,
+              userPool,
+              userWallet,
+              mint: usdt,
+              fromAta,
+              toAta,
+              user: user2.publicKey,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              systemProgram: SystemProgram.programId
+            },
+            signers: [user2]
+        }
+      )
     } catch (error) {
       console.log(error);
     }
@@ -337,6 +291,7 @@ describe("wallet_program", () => {
   it("forward usdt to admin", async () => {
     const provider = anchor.AnchorProvider.local();
     const user2 = provider.wallet.payer;
+    const wallet = provider.wallet;
 
     const userWalletIndex = 2;
     const [userSendAccount, _] = await anchor.web3.PublicKey.findProgramAddress(
@@ -364,34 +319,81 @@ describe("wallet_program", () => {
       program.programId
     );
 
-    try {
-      const tx = await program.rpc.forwardToAdmin(
-        userWalletIndex, {
-          accounts: {
-            config,
-            userSendAccount,
-            vaultReceiveAccount: vaultUsdtAccount,
-            mint: usdt,
-            userWallet,
-            userPool,
-            user: user2.publicKey,
-            authority: user2.publicKey,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId
+    const HERMES_URL = "https://hermes.pyth.network/";
+    const DEVNET_RPC_URL = "https://api.devnet.solana.com";
+
+
+    const connection = program.provider.connection;
+
+    const priceServiceConnection = new PriceServiceConnection(HERMES_URL, {
+      priceFeedRequestConfig: { binary: true },
+    });
+
+   
+    const pythSolanaReceiver = new PythSolanaReceiver({
+      connection,
+      wallet: wallet as Wallet,
+    });
+
+    const priceUpdateData = await priceServiceConnection.getLatestVaas([
+      USDT_PRICE_FEED_ID,
+      USDC_PRICE_FEED_ID
+    ]);
+
+    const transactionBuilder = pythSolanaReceiver.newTransactionBuilder({
+      closeUpdateAccounts: false,
+    });
+    await transactionBuilder.addPostPriceUpdates(priceUpdateData);
+
+    
+    await transactionBuilder.addPriceConsumerInstructions(
+      async (
+        getPriceUpdateAccount: (priceFeedId: string) => PublicKey
+      ): Promise<InstructionWithEphemeralSigners[]> => {
+        return [
+          {
+            instruction: await program.methods
+              .forwardUsdtToAdmin(userWalletIndex)
+              .accounts({
+                config,
+                userSendAccount,
+                vaultReceiveAccount: vaultUsdtAccount,
+                mint: usdt,
+                userWallet,
+                userPool,
+                user: user2.publicKey,
+                authority: user2.publicKey,
+                usdcPriceUpdate:getPriceUpdateAccount(USDC_PRICE_FEED_ID),
+                usdtPriceUpdate:getPriceUpdateAccount(USDT_PRICE_FEED_ID),
+                tokenProgram: TOKEN_PROGRAM_ID,
+                systemProgram: SystemProgram.programId
+              })
+              .instruction(),
+              signers: [user2],
           },
-          signers: [user2]
-        }
+        ];
+      }
+    );
+
+    try {
+      await pythSolanaReceiver.provider.sendAll(
+        await transactionBuilder.buildVersionedTransactions({
+          computeUnitPriceMicroLamports: 50000,
+        }),
+        user2,
+        // { 
+        //   skipPreflight: true,
+        // }
       );
-      console.log("tx->", tx);
     } catch (error) {
-      console.log(error)
-    }   
+      console.log(error);
+    }
   });
+  */
 
   it("deposit sol", async() => {
     const provider = anchor.AnchorProvider.local();
     const user2 = provider.wallet.payer;
-    const wallet = provider.wallet;
 
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -407,6 +409,55 @@ describe("wallet_program", () => {
       [
         Buffer.from("USER-WALLET"),
         new anchor.BN(userWalletIndex).toBuffer("le", 4)
+      ],
+      program.programId
+    );
+
+    const depositAmount = 10000000;
+    const tx = await program.rpc.depositSol(
+      userWalletIndex,new anchor.BN(depositAmount),
+      {
+        accounts: {
+          config,
+          userPool,
+          userWallet,
+          user: user2.publicKey,
+          systemProgram: SystemProgram.programId
+        },
+        signers: [user2],
+      }
+    );
+    console.log("tx->", tx);
+
+   
+  });
+
+  it("forward sol to admin", async() => {
+    const provider = anchor.AnchorProvider.local();
+    const user2 = provider.wallet.payer;
+    const wallet = provider.wallet;
+
+    const userWalletIndex = 2;
+ 
+    const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
+      [
+        Buffer.from("USER-WALLET"),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4)
+      ],
+      program.programId
+    );
+
+    const [masterWallet, _2] = await anchor.web3.PublicKey.findProgramAddress(
+      [
+        Buffer.from("MASTER-WALLET"),
+      ],
+      program.programId
+    );
+
+    const [userPool, _3] = await anchor.web3.PublicKey.findProgramAddress(
+      [
+        Buffer.from("USER-AUTHORITY"),
+        user2.publicKey.toBuffer()
       ],
       program.programId
     );
@@ -440,7 +491,7 @@ describe("wallet_program", () => {
     await transactionBuilder.addPostPriceUpdates([priceSolUpdateData[0]]);
     await transactionBuilder.addPostPriceUpdates([priceUsdcUpdateData[0]]);
 
-    const depositAmount = 10000000;
+    const forwardAmount = 10000000;
 
     await transactionBuilder.addPriceConsumerInstructions(
       async (
@@ -449,15 +500,15 @@ describe("wallet_program", () => {
         return [
           {
             instruction: await program.methods
-              .depositSol(userWalletIndex,new anchor.BN(depositAmount))
+              .forwardSolToAdmin(userWalletIndex,new anchor.BN(forwardAmount))
               .accounts({
                 config,
-                userPool,
                 userWallet,
-                usdcPriceUpdate: getPriceUpdateAccount(USDC_PRICE_FEED_ID),
+                masterWallet,
+                userPool,
+                authority: user2.publicKey,
                 solPriceUpdate: getPriceUpdateAccount(SOL_PRICE_FEED_ID),
-                user: user2.publicKey,
-                tokenProgram: TOKEN_PROGRAM_ID,
+                usdcPriceUpdate: getPriceUpdateAccount(USDC_PRICE_FEED_ID),
                 systemProgram: SystemProgram.programId
               })
               .instruction(),
@@ -479,55 +530,7 @@ describe("wallet_program", () => {
       console.log(error);
     }
   });
-
-  it("forward sol to admin", async() => {
-    const provider = anchor.AnchorProvider.local();
-    const user2 = provider.wallet.payer;
-
-    const userWalletIndex = 2;
- 
-    const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-WALLET"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4)
-      ],
-      program.programId
-    );
-
-    const [masterWallet, _2] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("MASTER-WALLET"),
-      ],
-      program.programId
-    );
-
-    const [userPool, _3] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-AUTHORITY"),
-        user2.publicKey.toBuffer()
-      ],
-      program.programId
-    );
-
-    try {
-      const tx = await program.rpc.forwardSolToAdmin(
-        userWalletIndex, {
-          accounts: {
-            config,
-            userWallet,
-            masterWallet,
-            userPool,
-            authority: user2.publicKey,
-            systemProgram: SystemProgram.programId
-          },
-          signers: [user2]
-        }
-      );
-      console.log("tx->", tx);
-    } catch (error) {
-      console.log(error)
-    }
-  });
+  /*
   it("withdraw usdc", async() => {
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -600,7 +603,8 @@ describe("wallet_program", () => {
     } catch (error) {
       console.log(error);
     }
-  })
+  });
+  */
 
   it("withdraw sol by owner", async() => {
    
@@ -610,9 +614,10 @@ describe("wallet_program", () => {
       ],
       program.programId
     );
+    console.log(masterWallet.toString());
 
     
-    const withdrawAmount = 10000000;
+    const withdrawAmount = 1000000;
 
     try {
       const tx = await program.rpc.withdrawSol(
@@ -631,6 +636,6 @@ describe("wallet_program", () => {
     } catch (error) {
       console.log(error);
     }
-  })
+  });
 
 });

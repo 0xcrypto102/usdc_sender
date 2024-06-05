@@ -10,7 +10,8 @@
         "@pythnetwork/pyth-solana-receiver": "^0.8.0",
         "@solana/spl-token": "^0.4.6",
         "@solana/wallet-adapter-react": "^0.15.35",
-        "@solana/web3.js": "^1.91.8"
+        "@solana/web3.js": "^1.91.8",
+        "rpc-websockets": "7.9.0"
     },
     "devDependencies": {
         "@types/bn.js": "^5.1.0",

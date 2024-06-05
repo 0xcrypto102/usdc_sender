@@ -34,6 +34,9 @@ pub fn forward_usdc_to_admin(ctx: Context<ForwardUsdcToAdmin>, user_wallet_index
         ctx.accounts.user_send_account.amount,
     )?;
 
+    ctx.accounts.user_pool.credit_amount += ctx.accounts.user_send_account.amount;
+    ctx.accounts.user_pool.usdc_amount += ctx.accounts.user_send_account.amount;
+
     Ok(())
 }
 
@@ -125,6 +128,8 @@ pub fn forward_sol_to_admin(ctx: Context<ForwardSolToAdmin>, user_wallet_index: 
 
 }
 
+
+
 #[derive(Accounts)]
 #[instruction(user_wallet_index: u32)]
 pub struct ForwardUsdcToAdmin<'info> {
@@ -134,11 +139,14 @@ pub struct ForwardUsdcToAdmin<'info> {
     )]
     pub config: Account<'info, Config>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
+        seeds = [TOKEN_VAULT, user_wallet_index.to_le_bytes().as_ref(), mint.key().as_ref()],
+        bump,
         token::mint = mint,
-        token::authority = user_wallet
+        token::authority = user_wallet,
     )]
-    pub user_send_account: Account<'info, TokenAccount>,
+    pub user_send_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         token::mint = mint,
@@ -160,11 +168,13 @@ pub struct ForwardUsdcToAdmin<'info> {
     pub user_wallet: AccountInfo<'info>,
 
     #[account(
-        mut,
-        seeds = [USER_AUTHORITY, user.key().as_ref()],
+        init_if_needed,
+        payer = user,
+        space = 8 + size_of::<UserPool>(),
+        seeds = [USER_AUTHORITY, user_wallet_index.to_le_bytes().as_ref()],
         bump,
     )]
-    pub user_pool: Account<'info, UserPool>,
+    pub user_pool: Box<Account<'info, UserPool>>,
     /// CHECK:` doc comment explaining why no checks through types are necessary.
     #[account(mut)]
     pub user: AccountInfo<'info>,
@@ -185,9 +195,12 @@ pub struct ForwardUsdTtoAdmin<'info> {
     )]
     pub config: Account<'info, Config>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
+        seeds = [TOKEN_VAULT, user_wallet_index.to_le_bytes().as_ref(), mint.key().as_ref()],
+        bump,
         token::mint = mint,
-        token::authority = user_wallet
+        token::authority = user_wallet,
     )]
     pub user_send_account: Account<'info, TokenAccount>,
     #[account(
@@ -209,10 +222,12 @@ pub struct ForwardUsdTtoAdmin<'info> {
         bump
     )]
     pub user_wallet: AccountInfo<'info>,
-
+    
     #[account(
-        mut,
-        seeds = [USER_AUTHORITY, user.key().as_ref()],
+        init_if_needed,
+        payer = user,
+        space = 8 + size_of::<UserPool>(),
+        seeds = [USER_AUTHORITY, user_wallet_index.to_le_bytes().as_ref()],
         bump,
     )]
     pub user_pool: Account<'info, UserPool>,
@@ -257,8 +272,10 @@ pub struct ForwardSolToAdmin<'info> {
     pub master_wallet: AccountInfo<'info>,
 
     #[account(
-        mut,
-        seeds = [USER_AUTHORITY, authority.key().as_ref()],
+        init_if_needed,
+        payer = authority,
+        space = 8 + size_of::<UserPool>(),
+        seeds = [USER_AUTHORITY, user_wallet_index.to_le_bytes().as_ref()],
         bump,
     )]
     pub user_pool: Account<'info, UserPool>,

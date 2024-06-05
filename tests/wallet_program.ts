@@ -105,18 +105,18 @@ describe("wallet_program", () => {
     }
     
   });
-  /*
 
   it("deposit usdc", async() => {
+    const userWalletIndex = 1;
+
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("USER-AUTHORITY"),
-        user.publicKey.toBuffer()
+        new anchor.BN(userWalletIndex).toBuffer("le", 4)
       ],
       program.programId
     );
 
-    const userWalletIndex = 1;
 
     const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -137,7 +137,7 @@ describe("wallet_program", () => {
     const [to, _2] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("TOKEN-VAULT"),
-        user.publicKey.toBuffer(),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
         usdc.toBuffer()
       ],
       program.programId
@@ -175,7 +175,7 @@ describe("wallet_program", () => {
     const [userSendAccount, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("TOKEN-VAULT"),
-        user.publicKey.toBuffer(),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
         usdc.toBuffer()
       ],
       program.programId
@@ -192,7 +192,7 @@ describe("wallet_program", () => {
     const [userPool, _2] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("USER-AUTHORITY"),
-        user.publicKey.toBuffer()
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
       ],
       program.programId
     );
@@ -228,16 +228,16 @@ describe("wallet_program", () => {
     const user2 = provider.wallet.payer;
 
     // const wallet = new NodeWallet(user);
+    const userWalletIndex = 2;
 
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("USER-AUTHORITY"),
-        user2.publicKey.toBuffer()
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
       ],
       program.programId
     );
 
-    const userWalletIndex = 2;
 
     const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -256,7 +256,7 @@ describe("wallet_program", () => {
     const [toAta, _2] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("TOKEN-VAULT"),
-        user2.publicKey.toBuffer(),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
         usdt.toBuffer()
       ],
       program.programId
@@ -297,7 +297,7 @@ describe("wallet_program", () => {
     const [userSendAccount, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("TOKEN-VAULT"),
-        user2.publicKey.toBuffer(),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
         usdt.toBuffer()
       ],
       program.programId
@@ -314,7 +314,7 @@ describe("wallet_program", () => {
     const [userPool, _2] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("USER-AUTHORITY"),
-        user2.publicKey.toBuffer()
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
       ],
       program.programId
     );
@@ -394,16 +394,16 @@ describe("wallet_program", () => {
   it("deposit sol", async() => {
     const provider = anchor.AnchorProvider.local();
     const user2 = provider.wallet.payer;
+    const userWalletIndex = 2;
 
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("USER-AUTHORITY"),
-        user2.publicKey.toBuffer()
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
       ],
       program.programId
     );
 
-    const userWalletIndex = 2;
 
     const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -457,7 +457,7 @@ describe("wallet_program", () => {
     const [userPool, _3] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("USER-AUTHORITY"),
-        user2.publicKey.toBuffer()
+        new anchor.BN(userWalletIndex).toBuffer("le", 4)
       ],
       program.programId
     );
@@ -530,12 +530,14 @@ describe("wallet_program", () => {
       console.log(error);
     }
   });
-  /*
+
   it("withdraw usdc", async() => {
+    const userWalletIndex = 1;
+
     const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("USER-AUTHORITY"),
-        user.publicKey.toBuffer()
+        new anchor.BN(userWalletIndex).toBuffer("le", 4)
       ],
       program.programId
     );
@@ -545,7 +547,6 @@ describe("wallet_program", () => {
       user.publicKey
     );
 
-    const userWalletIndex = 1;
 
     const withdrawAmount = 1000000;
     console.log("vaultUsdcAccount", vaultUsdcAccount.toString());
@@ -604,7 +605,6 @@ describe("wallet_program", () => {
       console.log(error);
     }
   });
-  */
 
   it("withdraw sol by owner", async() => {
    

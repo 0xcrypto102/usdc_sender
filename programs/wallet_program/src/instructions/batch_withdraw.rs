@@ -8,7 +8,7 @@ use crate::{
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
 
-pub fn batch_withdraw(ctx: Context<BatchWithdraw>, amounts: Vec<u64>, address: Vec<Pubkey>) -> Result<()> {
+pub fn batch_withdraw(ctx: Context<BatchWithdraw>, amounts: Vec<u64>) -> Result<()> {
 
     let (_, bump) = Pubkey::find_program_address(&[MASTER_WALLET], &ctx.program_id);
     let vault_seeds = &[MASTER_WALLET, &[bump]];

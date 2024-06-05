@@ -22,16 +22,8 @@ pub mod wallet_program {
         instructions::initialize_usdc(ctx)
     }
 
-    pub fn deposit_usdc(ctx: Context<DepositUsdc>,user_wallet_index: u32, amount: u64) -> Result<()> {
-        instructions::deposit_usdc(ctx,user_wallet_index, amount)
-    }
-
-    pub fn deposit_usdt(ctx: Context<DepositUsdt>,user_wallet_index: u32, amount: u64) -> Result<()> {
-        instructions::deposit_usdt(ctx, user_wallet_index, amount)
-    }
-
-    pub fn deposit_sol(ctx: Context<DepositSol>, user_wallet_index: u32,amount: u64) -> Result<()> {
-        instructions::deposit_sol(ctx, user_wallet_index, amount)
+    pub fn initialize_user_wallet(ctx: Context<InitializeUserWallet>) -> Result<()> {
+        instructions::initialize_user_wallet(ctx)
     }
 
     pub fn batch_withdraw(ctx: Context<BatchWithdraw>, amount: Vec<u64>) -> Result<()> {

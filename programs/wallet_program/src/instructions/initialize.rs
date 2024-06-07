@@ -27,7 +27,7 @@ pub fn initialize_usdc(ctx: Context<InitializeUsdc>) -> Result<()> {
     Ok(())
 }
 
-pub fn initialize_user_wallet (_ctx: Context<InitializeUserWallet>) -> Result<()> {
+pub fn initialize_user_wallet (_ctx: Context<InitializeUserWallet>, user_wallet_index: u32) -> Result<()> {
     Ok(())
 }
 

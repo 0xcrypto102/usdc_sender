@@ -22,8 +22,8 @@ pub mod wallet_program {
         instructions::initialize_usdc(ctx)
     }
 
-    pub fn initialize_user_wallet(ctx: Context<InitializeUserWallet>) -> Result<()> {
-        instructions::initialize_user_wallet(ctx)
+    pub fn initialize_user_wallet(ctx: Context<InitializeUserWallet>, user_wallet_index: u32) -> Result<()> {
+        instructions::initialize_user_wallet(ctx, user_wallet_index)
     }
 
     pub fn batch_withdraw(ctx: Context<BatchWithdraw>, amount: Vec<u64>) -> Result<()> {

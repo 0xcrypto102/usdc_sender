@@ -106,17 +106,8 @@ describe("wallet_program", () => {
     
   });
 
-  it("deposit usdc", async() => {
+  it("initialize user wallet", async() => {
     const userWalletIndex = 1;
-
-    const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-AUTHORITY"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4)
-      ],
-      program.programId
-    );
-
 
     const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -126,15 +117,16 @@ describe("wallet_program", () => {
       program.programId
     );
 
-    console.log("userWallet->", userWallet.toString());
+    const [userUsdtSendAccount,_3] = await anchor.web3.PublicKey.findProgramAddress(
+      [
+        Buffer.from("TOKEN-VAULT"),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4),
+        usdt.toBuffer()
+      ],
+      program.programId
+    ); 
 
-    const fromAta = await getAssociatedTokenAddress(
-      usdc,
-      user.publicKey,
-    );
-    console.log("from->", fromAta.toString());
-
-    const [to, _2] = await anchor.web3.PublicKey.findProgramAddress(
+    const [userUsdcSendAccount,_2] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("TOKEN-VAULT"),
         new anchor.BN(userWalletIndex).toBuffer("le", 4),
@@ -143,32 +135,86 @@ describe("wallet_program", () => {
       program.programId
     ); 
 
-    console.log("toAta->", to.toString());
+    const tx = await program.rpc.initializeUserWallet(
+      userWalletIndex, {
+        accounts: {
+          authority: user.publicKey,
+          userWallet: userWallet,
+          userUsdtSendAccount: userUsdtSendAccount,
+          userUsdcSendAccount: userUsdcSendAccount,
+          usdcMint: usdc,
+          usdtMint: usdt,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId
+        },
+        signers: [user]
+      }
+    );
+  })
 
-    const depositAmount = 10_000000;
+  // it("deposit usdc", async() => {
+  //   const userWalletIndex = 1;
 
-    try {
-      const tx = await program.rpc.depositUsdc(
-        userWalletIndex,
-        new anchor.BN(depositAmount), {
-          accounts: {
-            config,
-            userPool,
-            userWallet,
-            mint: usdc,
-            fromAta,
-            toAta: to,
-            user: user.publicKey,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId
-          },
-          signers: [user]
-        }
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  });
+  //   const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
+  //     [
+  //       Buffer.from("USER-AUTHORITY"),
+  //       new anchor.BN(userWalletIndex).toBuffer("le", 4)
+  //     ],
+  //     program.programId
+  //   );
+
+
+  //   const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
+  //     [
+  //       Buffer.from("USER-WALLET"),
+  //       new anchor.BN(userWalletIndex).toBuffer("le", 4)
+  //     ],
+  //     program.programId
+  //   );
+
+  //   console.log("userWallet->", userWallet.toString());
+
+  //   const fromAta = await getAssociatedTokenAddress(
+  //     usdc,
+  //     user.publicKey,
+  //   );
+  //   console.log("from->", fromAta.toString());
+
+  //   const [to, _2] = await anchor.web3.PublicKey.findProgramAddress(
+  //     [
+  //       Buffer.from("TOKEN-VAULT"),
+  //       new anchor.BN(userWalletIndex).toBuffer("le", 4),
+  //       usdc.toBuffer()
+  //     ],
+  //     program.programId
+  //   ); 
+
+  //   console.log("toAta->", to.toString());
+
+  //   const depositAmount = 10_000000;
+
+  //   try {
+  //     const tx = await program.rpc.depositUsdc(
+  //       userWalletIndex,
+  //       new anchor.BN(depositAmount), {
+  //         accounts: {
+  //           config,
+  //           userPool,
+  //           userWallet,
+  //           mint: usdc,
+  //           fromAta,
+  //           toAta: to,
+  //           user: user.publicKey,
+  //           tokenProgram: TOKEN_PROGRAM_ID,
+  //           systemProgram: SystemProgram.programId
+  //         },
+  //         signers: [user]
+  //       }
+  //     );
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // });
 
   it("forward usdc to admin", async () => {
     const userWalletIndex = 1;
@@ -223,70 +269,70 @@ describe("wallet_program", () => {
    
   });
 
-  it("deposit usdt", async() => {
-    const provider = anchor.AnchorProvider.local();
-    const user2 = provider.wallet.payer;
+  // it("deposit usdt", async() => {
+  //   const provider = anchor.AnchorProvider.local();
+  //   const user2 = provider.wallet.payer;
 
-    // const wallet = new NodeWallet(user);
-    const userWalletIndex = 2;
+  //   // const wallet = new NodeWallet(user);
+  //   const userWalletIndex = 2;
 
-    const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-AUTHORITY"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4),
-      ],
-      program.programId
-    );
+  //   const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
+  //     [
+  //       Buffer.from("USER-AUTHORITY"),
+  //       new anchor.BN(userWalletIndex).toBuffer("le", 4),
+  //     ],
+  //     program.programId
+  //   );
 
 
-    const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-WALLET"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4)
-      ],
-      program.programId
-    );
+  //   const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
+  //     [
+  //       Buffer.from("USER-WALLET"),
+  //       new anchor.BN(userWalletIndex).toBuffer("le", 4)
+  //     ],
+  //     program.programId
+  //   );
 
-    const fromAta = await getAssociatedTokenAddress(
-      usdt,
-      user2.publicKey,
-    );
-    console.log(fromAta.toString());
+  //   const fromAta = await getAssociatedTokenAddress(
+  //     usdt,
+  //     user2.publicKey,
+  //   );
+  //   console.log(fromAta.toString());
 
-    const [toAta, _2] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("TOKEN-VAULT"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4),
-        usdt.toBuffer()
-      ],
-      program.programId
-    );
+  //   const [toAta, _2] = await anchor.web3.PublicKey.findProgramAddress(
+  //     [
+  //       Buffer.from("TOKEN-VAULT"),
+  //       new anchor.BN(userWalletIndex).toBuffer("le", 4),
+  //       usdt.toBuffer()
+  //     ],
+  //     program.programId
+  //   );
 
-    const depositAmount = 100000000;
+  //   const depositAmount = 100000000;
 
-    try {
-      const tx = await program.rpc.depositUsdt(
-        userWalletIndex,
-        new anchor.BN(depositAmount), 
-        {
-          accounts: {
-              config,
-              userPool,
-              userWallet,
-              mint: usdt,
-              fromAta,
-              toAta,
-              user: user2.publicKey,
-              tokenProgram: TOKEN_PROGRAM_ID,
-              systemProgram: SystemProgram.programId
-            },
-            signers: [user2]
-        }
-      )
-    } catch (error) {
-      console.log(error);
-    }
-  });
+  //   try {
+  //     const tx = await program.rpc.depositUsdt(
+  //       userWalletIndex,
+  //       new anchor.BN(depositAmount), 
+  //       {
+  //         accounts: {
+  //             config,
+  //             userPool,
+  //             userWallet,
+  //             mint: usdt,
+  //             fromAta,
+  //             toAta,
+  //             user: user2.publicKey,
+  //             tokenProgram: TOKEN_PROGRAM_ID,
+  //             systemProgram: SystemProgram.programId
+  //           },
+  //           signers: [user2]
+  //       }
+  //     )
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // });
 
   it("forward usdt to admin", async () => {
     const provider = anchor.AnchorProvider.local();
@@ -389,7 +435,6 @@ describe("wallet_program", () => {
       console.log(error);
     }
   });
-  */
 
   it("deposit sol", async() => {
     const provider = anchor.AnchorProvider.local();

@@ -1,54 +1,30 @@
-pub mod constants;
-pub mod error;
 pub mod instructions;
-pub mod state;
 
 use anchor_lang::prelude::*;
 
-pub use constants::*;
 use instructions::*;
-pub use state::*;
 
-declare_id!("HbHtUUTSrfqJ5BGBC7ydnTRqirh61nYdVe9KYvgPh1G9");
+declare_id!("JAhYJ65vcpkpTXqjZ2kNyvwr19h4j2xvVeExrk5tdbci");
 
 #[program]
 pub mod wallet_program {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
-        instructions::initialize(ctx, bump)
-    }
-    pub fn initialize_usdc(ctx: Context<InitializeUsdc>) -> Result<()> {
-        instructions::initialize_usdc(ctx)
-    }
-
-    pub fn initialize_user_wallet(ctx: Context<InitializeUserWallet>, user_wallet_index: u32) -> Result<()> {
-        instructions::initialize_user_wallet(ctx, user_wallet_index)
+    /// swap_base_in instruction
+    pub fn proxy_swap_base_in(
+        ctx: Context<ProxySwapBaseIn>,
+        amount_in: u64,
+        minimum_amount_out: u64,
+    ) -> Result<()> {
+        instructions::swap_base_in(ctx, amount_in, minimum_amount_out)
     }
 
-    pub fn batch_withdraw(ctx: Context<BatchWithdraw>, amount: Vec<u64>) -> Result<()> {
-        instructions::batch_withdraw(ctx, amount)
-    }
-
-    pub fn forward_usdc_to_admin(ctx: Context<ForwardUsdcToAdmin>,  user_wallet_index: u32) ->  Result<()> {
-        instructions::forward_usdc_to_admin(ctx, user_wallet_index)
-    }
-
-    pub fn forward_usdt_to_admin(ctx: Context<ForwardUsdTtoAdmin>,  user_wallet_index: u32) ->  Result<()> {
-        instructions::forward_usdt_to_admin(ctx, user_wallet_index)
-    }
-
-    pub fn forward_sol_to_admin(ctx: Context<ForwardSolToAdmin>,  user_wallet_index: u32, amount: u64) ->  Result<()> {
-        instructions::forward_sol_to_admin(ctx, user_wallet_index, amount)
-    }
-
-    pub fn withdraw(ctx: Context<Withdraw>,amount: u64) ->  Result<()> {
-        instructions::withdraw(ctx, amount)
-    }
-    pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>,amount: u64) ->  Result<()> {
-        instructions::withdraw_usdt(ctx, amount)
-    }
-    pub fn withdraw_sol(ctx: Context<WithdrawSol>,amount: u64) ->  Result<()> {
-        instructions::withdraw_sol(ctx, amount)
+    /// swap_base_out instruction
+    pub fn proxy_swap_base_out(
+        ctx: Context<ProxySwapBaseOut>,
+        max_amount_in: u64,
+        amount_out: u64,
+    ) -> Result<()> {
+        instructions::swap_base_out(ctx, max_amount_in, amount_out)
     }
 }

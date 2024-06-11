@@ -12,31 +12,6 @@ use {
 };
 use solana_program::{program::invoke_signed, system_instruction};
 
-pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-    let user_pool = &mut ctx.accounts.user_pool;
-
-    let (_, bump) = Pubkey::find_program_address(&[CONFIG], &ctx.program_id);
-    let vault_seeds = &[CONFIG, &[bump]];
-    let signer = &[&vault_seeds[..]];
-
-    require!(user_pool.credit_amount >= amount, WalletError::InsufficientBalance);
-
-    anchor_spl::token::transfer(
-        CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            anchor_spl::token::Transfer {
-                from: ctx.accounts.vault_send_account.to_account_info(),
-                to: ctx.accounts.user_receive_account.to_account_info(),
-                authority: ctx.accounts.config.to_account_info(),
-            },
-            signer,
-        ),
-        amount,
-    )?;
-    user_pool.credit_amount -= amount;
-
-    Ok(())
-}
 
 pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>, amount: u64) -> Result<()> {
     let destination = &ctx.accounts.to_ata;
@@ -69,7 +44,7 @@ pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>, amount: u64) -> Result<()> {
 
 pub fn withdraw_sol(ctx: Context<WithdrawSol>, amount: u64) -> Result<()> {
     let accts = ctx.accounts;
-    let destination = &accts.user;
+    let destination = &accts.receiver;
     let source = &accts.master_wallet;
     let authority = &accts.config;
     let user = &accts.user;
@@ -95,43 +70,6 @@ pub fn withdraw_sol(ctx: Context<WithdrawSol>, amount: u64) -> Result<()> {
 
     Ok(())
 }
-#[derive(Accounts)]
-pub struct Withdraw<'info> {
-    #[account(
-        seeds = [CONFIG], 
-        bump
-    )]
-    pub config: Account<'info, Config>,
-
-    #[account(mut)]
-    pub user_receive_account: Account<'info, TokenAccount>,
-
-    #[account(
-        mut,
-        seeds = [TOKEN_VAULT, mint.key().as_ref()],
-        bump
-    )]
-    pub vault_send_account: Account<'info, TokenAccount>,
-
-    #[account(
-        mut,
-        constraint = mint.key().to_string() == USDC_TOKEN_MINT_PUBKEY
-    )]
-    pub mint: Account<'info, Mint>,
-
-    #[account(
-        mut,
-        seeds = [USER_AUTHORITY, authority.key().as_ref()],
-        bump,
-    )]
-    pub user_pool: Account<'info, UserPool>,
-
-    #[account(mut)]
-    pub authority: Signer<'info>,
-
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}
 
 #[derive(Accounts)]
 pub struct WithdrawUsdt<'info> {
@@ -154,13 +92,16 @@ pub struct WithdrawUsdt<'info> {
     #[account(
         init_if_needed,
         associated_token::mint = mint,
-        associated_token::authority = user,
+        associated_token::authority = receiver,
         payer = user,
     )]
     pub to_ata: Account<'info, TokenAccount>,
 
     #[account(mut)]
     pub user: Signer<'info>,
+    /// CHECK:` doc comment explaining why no checks through types are necessary.
+    #[account(mut)]
+    pub receiver: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -185,5 +126,9 @@ pub struct WithdrawSol<'info> {
 
     #[account(mut)]
     pub user: Signer<'info>,
+    /// CHECK:` doc comment explaining why no checks through types are necessary.
+    #[account(mut)]
+    pub receiver: AccountInfo<'info>,
+
     pub system_program: Program<'info, System>,
 }

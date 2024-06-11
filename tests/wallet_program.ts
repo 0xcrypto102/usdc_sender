@@ -31,11 +31,8 @@ describe("wallet_program", () => {
   );
   const usdc = new PublicKey("5hyJ6h3ABjF7zEBhc32LWT5ZUCkNx4AZkdRzKC1MUHRb");
   const usdt = new PublicKey("8NtheYSKWDkCgWoc8HScQFkcCTF1FiFEbbriosZLNmtE");
-  const SOL_PRICE_FEED_ID = "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d";
-  const USDT_PRICE_FEED_ID = "0x2b89b9dc8fdf9f34709a5b106b472f0f39bb6ca9ce04b0fd7f2e971688e2e53b";
-  const USDC_PRICE_FEED_ID = "0xeaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a";
-
-
+  let authority =  Keypair.generate();
+  
   it("GET PDA", async() => {
     [config, config_bump] = await anchor.web3.PublicKey.findProgramAddress(
       [
@@ -141,8 +138,6 @@ describe("wallet_program", () => {
           authority: user.publicKey,
           userWallet: userWallet,
           userUsdtSendAccount: userUsdtSendAccount,
-          userUsdcSendAccount: userUsdcSendAccount,
-          usdcMint: usdc,
           usdtMint: usdt,
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId
@@ -150,189 +145,7 @@ describe("wallet_program", () => {
         signers: [user]
       }
     );
-  })
-
-  // it("deposit usdc", async() => {
-  //   const userWalletIndex = 1;
-
-  //   const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from("USER-AUTHORITY"),
-  //       new anchor.BN(userWalletIndex).toBuffer("le", 4)
-  //     ],
-  //     program.programId
-  //   );
-
-
-  //   const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from("USER-WALLET"),
-  //       new anchor.BN(userWalletIndex).toBuffer("le", 4)
-  //     ],
-  //     program.programId
-  //   );
-
-  //   console.log("userWallet->", userWallet.toString());
-
-  //   const fromAta = await getAssociatedTokenAddress(
-  //     usdc,
-  //     user.publicKey,
-  //   );
-  //   console.log("from->", fromAta.toString());
-
-  //   const [to, _2] = await anchor.web3.PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from("TOKEN-VAULT"),
-  //       new anchor.BN(userWalletIndex).toBuffer("le", 4),
-  //       usdc.toBuffer()
-  //     ],
-  //     program.programId
-  //   ); 
-
-  //   console.log("toAta->", to.toString());
-
-  //   const depositAmount = 10_000000;
-
-  //   try {
-  //     const tx = await program.rpc.depositUsdc(
-  //       userWalletIndex,
-  //       new anchor.BN(depositAmount), {
-  //         accounts: {
-  //           config,
-  //           userPool,
-  //           userWallet,
-  //           mint: usdc,
-  //           fromAta,
-  //           toAta: to,
-  //           user: user.publicKey,
-  //           tokenProgram: TOKEN_PROGRAM_ID,
-  //           systemProgram: SystemProgram.programId
-  //         },
-  //         signers: [user]
-  //       }
-  //     );
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // });
-
-  it("forward usdc to admin", async () => {
-    const userWalletIndex = 1;
-    const [userSendAccount, _] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("TOKEN-VAULT"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4),
-        usdc.toBuffer()
-      ],
-      program.programId
-    );
-
-    const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-WALLET"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4)
-      ],
-      program.programId
-    );
-
-    const [userPool, _2] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-AUTHORITY"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4),
-      ],
-      program.programId
-    );
-
-    try {
-      const tx = await program.rpc.forwardUsdcToAdmin(
-        userWalletIndex, {
-          accounts: {
-            config,
-            userSendAccount,
-            vaultReceiveAccount: vaultUsdcAccount,
-            mint: usdc,
-            userWallet,
-            userPool,
-            user: user.publicKey,
-            authority: user.publicKey,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId
-          },
-          signers: [user]
-        }
-      );
-      console.log("tx->", tx);
-    } catch (error) {
-      console.log(error)
-    }
-
-   
   });
-
-  // it("deposit usdt", async() => {
-  //   const provider = anchor.AnchorProvider.local();
-  //   const user2 = provider.wallet.payer;
-
-  //   // const wallet = new NodeWallet(user);
-  //   const userWalletIndex = 2;
-
-  //   const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from("USER-AUTHORITY"),
-  //       new anchor.BN(userWalletIndex).toBuffer("le", 4),
-  //     ],
-  //     program.programId
-  //   );
-
-
-  //   const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from("USER-WALLET"),
-  //       new anchor.BN(userWalletIndex).toBuffer("le", 4)
-  //     ],
-  //     program.programId
-  //   );
-
-  //   const fromAta = await getAssociatedTokenAddress(
-  //     usdt,
-  //     user2.publicKey,
-  //   );
-  //   console.log(fromAta.toString());
-
-  //   const [toAta, _2] = await anchor.web3.PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from("TOKEN-VAULT"),
-  //       new anchor.BN(userWalletIndex).toBuffer("le", 4),
-  //       usdt.toBuffer()
-  //     ],
-  //     program.programId
-  //   );
-
-  //   const depositAmount = 100000000;
-
-  //   try {
-  //     const tx = await program.rpc.depositUsdt(
-  //       userWalletIndex,
-  //       new anchor.BN(depositAmount), 
-  //       {
-  //         accounts: {
-  //             config,
-  //             userPool,
-  //             userWallet,
-  //             mint: usdt,
-  //             fromAta,
-  //             toAta,
-  //             user: user2.publicKey,
-  //             tokenProgram: TOKEN_PROGRAM_ID,
-  //             systemProgram: SystemProgram.programId
-  //           },
-  //           signers: [user2]
-  //       }
-  //     )
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // });
 
   it("forward usdt to admin", async () => {
     const provider = anchor.AnchorProvider.local();
@@ -365,116 +178,24 @@ describe("wallet_program", () => {
       program.programId
     );
 
-    const HERMES_URL = "https://hermes.pyth.network/";
-    const DEVNET_RPC_URL = "https://api.devnet.solana.com";
-
-
-    const connection = program.provider.connection;
-
-    const priceServiceConnection = new PriceServiceConnection(HERMES_URL, {
-      priceFeedRequestConfig: { binary: true },
-    });
-
    
-    const pythSolanaReceiver = new PythSolanaReceiver({
-      connection,
-      wallet: wallet as Wallet,
-    });
-
-    const priceUpdateData = await priceServiceConnection.getLatestVaas([
-      USDT_PRICE_FEED_ID,
-      USDC_PRICE_FEED_ID
-    ]);
-
-    const transactionBuilder = pythSolanaReceiver.newTransactionBuilder({
-      closeUpdateAccounts: false,
-    });
-    await transactionBuilder.addPostPriceUpdates(priceUpdateData);
-
-    
-    await transactionBuilder.addPriceConsumerInstructions(
-      async (
-        getPriceUpdateAccount: (priceFeedId: string) => PublicKey
-      ): Promise<InstructionWithEphemeralSigners[]> => {
-        return [
-          {
-            instruction: await program.methods
-              .forwardUsdtToAdmin(userWalletIndex)
-              .accounts({
-                config,
-                userSendAccount,
-                vaultReceiveAccount: vaultUsdtAccount,
-                mint: usdt,
-                userWallet,
-                userPool,
-                user: user2.publicKey,
-                authority: user2.publicKey,
-                usdcPriceUpdate:getPriceUpdateAccount(USDC_PRICE_FEED_ID),
-                usdtPriceUpdate:getPriceUpdateAccount(USDT_PRICE_FEED_ID),
-                tokenProgram: TOKEN_PROGRAM_ID,
-                systemProgram: SystemProgram.programId
-              })
-              .instruction(),
-              signers: [user2],
-          },
-        ];
-      }
-    );
-
-    try {
-      await pythSolanaReceiver.provider.sendAll(
-        await transactionBuilder.buildVersionedTransactions({
-          computeUnitPriceMicroLamports: 50000,
-        }),
-        user2,
-        // { 
-        //   skipPreflight: true,
-        // }
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  });
-
-  it("deposit sol", async() => {
-    const provider = anchor.AnchorProvider.local();
-    const user2 = provider.wallet.payer;
-    const userWalletIndex = 2;
-
-    const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-AUTHORITY"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4),
-      ],
-      program.programId
-    );
-
-
-    const [userWallet, _1] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-WALLET"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4)
-      ],
-      program.programId
-    );
-
-    const depositAmount = 10000000;
-    const tx = await program.rpc.depositSol(
-      userWalletIndex,new anchor.BN(depositAmount),
-      {
+    await program.rpc.forwardUsdtToAdmin(
+      userWalletIndex, {
         accounts: {
           config,
-          userPool,
+          userSendAccount,
+          vaultReceiveAccount: vaultUsdtAccount,
+          mint: usdt,
           userWallet,
-          user: user2.publicKey,
+          userPool,
+          authority: user2.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId
         },
-        signers: [user2],
+        signers: [user2]
       }
-    );
-    console.log("tx->", tx);
+    )
 
-   
   });
 
   it("forward sol to admin", async() => {
@@ -507,117 +228,24 @@ describe("wallet_program", () => {
       program.programId
     );
 
-    const HERMES_URL = "https://hermes.pyth.network/";
-    const DEVNET_RPC_URL = "https://api.devnet.solana.com";
-
-
-    const connection = program.provider.connection;
-
-    const priceServiceConnection = new PriceServiceConnection(HERMES_URL, {
-      priceFeedRequestConfig: { binary: true },
-    });
-
-    const pythSolanaReceiver = new PythSolanaReceiver({
-      connection,
-      wallet: wallet as Wallet,
-    });
-
-    const priceSolUpdateData = await priceServiceConnection.getLatestVaas([
-      SOL_PRICE_FEED_ID,
-    ]);
-
-    const priceUsdcUpdateData = await priceServiceConnection.getLatestVaas([
-      USDC_PRICE_FEED_ID,
-    ]);
-
-    const transactionBuilder = pythSolanaReceiver.newTransactionBuilder({
-      closeUpdateAccounts: true,
-    });
-    await transactionBuilder.addPostPriceUpdates([priceSolUpdateData[0]]);
-    await transactionBuilder.addPostPriceUpdates([priceUsdcUpdateData[0]]);
-
     const forwardAmount = 10000000;
 
-    await transactionBuilder.addPriceConsumerInstructions(
-      async (
-        getPriceUpdateAccount: (priceFeedId: string) => PublicKey
-      ): Promise<InstructionWithEphemeralSigners[]> => {
-        return [
-          {
-            instruction: await program.methods
-              .forwardSolToAdmin(userWalletIndex,new anchor.BN(forwardAmount))
-              .accounts({
-                config,
-                userWallet,
-                masterWallet,
-                userPool,
-                authority: user2.publicKey,
-                solPriceUpdate: getPriceUpdateAccount(SOL_PRICE_FEED_ID),
-                usdcPriceUpdate: getPriceUpdateAccount(USDC_PRICE_FEED_ID),
-                systemProgram: SystemProgram.programId
-              })
-              .instruction(),
-              signers: [user2],
-          },
-        ];
+    await program.rpc.forwardSolToAdmin(
+      userWalletIndex,
+      new anchor.BN(forwardAmount), {
+        accounts: {
+          config,
+          userWallet,
+          masterWallet,
+          userPool,
+          authority: user2.publicKey,
+          systemProgram: SystemProgram.programId
+        },
+        signers: [user2]
       }
-    );
-    try {
-      const tx = await pythSolanaReceiver.provider.sendAll(
-        await transactionBuilder.buildVersionedTransactions({
-          computeUnitPriceMicroLamports: 50000,
-        }),
-        user2
-        // { skipPreflight: true }
-      );
-      console.log("tx->", tx);
-    } catch (error) {
-      console.log(error);
-    }
+    )
   });
-
-  it("withdraw usdc", async() => {
-    const userWalletIndex = 1;
-
-    const [userPool, _] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from("USER-AUTHORITY"),
-        new anchor.BN(userWalletIndex).toBuffer("le", 4)
-      ],
-      program.programId
-    );
-
-    const userReceiveAccount = await getAssociatedTokenAddress(
-      usdc,
-      user.publicKey
-    );
-
-
-    const withdrawAmount = 1000000;
-    console.log("vaultUsdcAccount", vaultUsdcAccount.toString());
-
-    try {
-      const tx = await program.rpc.withdraw(
-        new anchor.BN(withdrawAmount),
-        {
-          accounts: {
-            config,
-            userReceiveAccount,
-            vaultSendAccount: vaultUsdcAccount,
-            mint: usdc,
-            userPool,
-            authority: user.publicKey,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId
-          },
-          signers: [user]
-        }
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  })
-  
+ 
   it("withdraw usdt by owner", async() => {
     const provider = anchor.AnchorProvider.local();
     const user2 = provider.wallet.payer;
@@ -639,6 +267,7 @@ describe("wallet_program", () => {
             fromAta: vaultUsdtAccount,
             toAta: userReceiveAccount,
             user: owner.publicKey,
+            receiver: owner.publicKey,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
             systemProgram: SystemProgram.programId
@@ -672,6 +301,7 @@ describe("wallet_program", () => {
             config,
             masterWallet,
             user: owner.publicKey,
+            receiver: owner.publicKey,
             systemProgram: SystemProgram.programId
           },
           signers: [owner]

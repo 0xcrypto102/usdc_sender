@@ -19,13 +19,6 @@ pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
 
     Ok(())
 }
-  
-pub fn initialize_usdc(ctx: Context<InitializeUsdc>) -> Result<()> {
-    let accts = ctx.accounts;
-    accts.config.vault_usdc_account = accts.vault_usdc_account.key();
-
-    Ok(())
-}
 
 pub fn initialize_user_wallet (_ctx: Context<InitializeUserWallet>, user_wallet_index: u32) -> Result<()> {
     Ok(())
@@ -72,35 +65,6 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct InitializeUsdc<'info> {
-    #[account(mut)]
-    pub authority: Signer<'info>,
-
-    #[account(
-        mut, 
-        seeds = [CONFIG], 
-        bump,
-    )]
-    pub config: Box<Account<'info, Config>>,
-
-    #[account(
-        init_if_needed,
-        payer = authority,
-        seeds = [TOKEN_VAULT, usdc_mint.key().as_ref()],
-        bump,
-        token::mint = usdc_mint,
-        token::authority = config,
-    )]
-    pub vault_usdc_account: Box<Account<'info, TokenAccount>>,
-   
-    #[account(mut)]
-    pub usdc_mint: Account<'info, Mint>,
-
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
 #[instruction(user_wallet_index: u32)]
 pub struct InitializeUserWallet<'info> {
     #[account(mut)]
@@ -123,19 +87,6 @@ pub struct InitializeUserWallet<'info> {
         token::authority = user_wallet,
     )]
     pub user_usdt_send_account: Box<Account<'info, TokenAccount>>,
-
-    #[account(
-        init_if_needed,
-        payer = authority,
-        seeds = [TOKEN_VAULT, user_wallet_index.to_le_bytes().as_ref(), usdc_mint.key().as_ref()],
-        bump,
-        token::mint = usdc_mint,
-        token::authority = user_wallet,
-    )]
-    pub user_usdc_send_account: Box<Account<'info, TokenAccount>>,
-
-    #[account(mut)]
-    pub usdc_mint: Account<'info, Mint>,
   
     #[account(mut)]
     pub usdt_mint: Account<'info, Mint>,

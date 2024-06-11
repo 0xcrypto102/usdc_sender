@@ -13,14 +13,15 @@ use {
 use solana_program::{program::invoke_signed, system_instruction};
 
 
-pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>, amount: u64) -> Result<()> {
+pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>,user_wallet_index: u32, amount: u64) -> Result<()> {
     let destination = &ctx.accounts.to_ata;
     let source = &ctx.accounts.from_ata;
     let token_program = &ctx.accounts.token_program;
     let authority = &ctx.accounts.config;
     let user = &ctx.accounts.user;
+    let user_pool = &mut ctx.accounts.user_pool;
 
-
+    require!(user_pool.usdt_amount > amount, WalletError::InsufficientBalance);
     require!(*user.key == authority.authority, WalletError::NotOwnerAllowed);
 
     // Transfer tokens from taker to initializer
@@ -39,16 +40,20 @@ pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>, amount: u64) -> Result<()> {
         amount,
     )?;
 
+    user_pool.usdt_amount -= amount;
+
     Ok(())
 }
 
-pub fn withdraw_sol(ctx: Context<WithdrawSol>, amount: u64) -> Result<()> {
+pub fn withdraw_sol(ctx: Context<WithdrawSol>, user_wallet_index: u32,amount: u64) -> Result<()> {
     let accts = ctx.accounts;
     let destination = &accts.receiver;
     let source = &accts.master_wallet;
     let authority = &accts.config;
     let user = &accts.user;
+    let user_pool = &mut accts.user_pool;
 
+    require!(user_pool.usdt_amount > amount, WalletError::InsufficientBalance);
     require!(user.key() == authority.authority, WalletError::NotOwnerAllowed);
 
     let seeds = &[MASTER_WALLET.as_ref(), &[ctx.bumps.master_wallet]];
@@ -68,10 +73,13 @@ pub fn withdraw_sol(ctx: Context<WithdrawSol>, amount: u64) -> Result<()> {
         signers,
     )?;
 
+    user_pool.sol_amount -= amount;
+
     Ok(())
 }
 
 #[derive(Accounts)]
+#[instruction(user_wallet_index: u32)]
 pub struct WithdrawUsdt<'info> {
     #[account(
         seeds = [CONFIG],
@@ -97,6 +105,13 @@ pub struct WithdrawUsdt<'info> {
     )]
     pub to_ata: Account<'info, TokenAccount>,
 
+    #[account(
+        mut,
+        seeds = [USER_AUTHORITY, user_wallet_index.to_le_bytes().as_ref()],
+        bump,
+    )]
+    pub user_pool: Account<'info, UserPool>,
+
     #[account(mut)]
     pub user: Signer<'info>,
     /// CHECK:` doc comment explaining why no checks through types are necessary.
@@ -109,6 +124,7 @@ pub struct WithdrawUsdt<'info> {
 
 
 #[derive(Accounts)]
+#[instruction(user_wallet_index: u32)]
 pub struct WithdrawSol<'info> {
     #[account(
         seeds = [CONFIG],
@@ -123,6 +139,13 @@ pub struct WithdrawSol<'info> {
         bump
     )]
     pub master_wallet: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        seeds = [USER_AUTHORITY, user_wallet_index.to_le_bytes().as_ref()],
+        bump,
+    )]
+    pub user_pool: Account<'info, UserPool>,
 
     #[account(mut)]
     pub user: Signer<'info>,

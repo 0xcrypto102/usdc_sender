@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-wallet_program = "JCSktUS2azr5PNfCiP1odNoWANaMKodkzgWtc6r6bMyH"
+wallet_program = "8n71iUutfxJsSyPj9tEa1moFiUgvXCGAF4KaHouP8CGu"
 
 [registry]
 url = "https://api.apr.dev"

@@ -249,6 +249,16 @@ describe("wallet_program", () => {
   it("withdraw usdt by owner", async() => {
     const provider = anchor.AnchorProvider.local();
     const user2 = provider.wallet.payer;
+    const userWalletIndex = 2;
+
+    const [userPool, _3] = await anchor.web3.PublicKey.findProgramAddress(
+      [
+        Buffer.from("USER-AUTHORITY"),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4)
+      ],
+      program.programId
+    );
+
 
     const userReceiveAccount = await getAssociatedTokenAddress(
       usdt,
@@ -259,6 +269,7 @@ describe("wallet_program", () => {
 
     try {
       const tx = await program.rpc.withdrawUsdt(
+        userWalletIndex,
         new anchor.BN(withdrawAmount),
         {
           accounts: {
@@ -266,6 +277,7 @@ describe("wallet_program", () => {
             mint: usdt,
             fromAta: vaultUsdtAccount,
             toAta: userReceiveAccount,
+            userPool,
             user: owner.publicKey,
             receiver: owner.publicKey,
             tokenProgram: TOKEN_PROGRAM_ID,
@@ -281,15 +293,22 @@ describe("wallet_program", () => {
   });
 
   it("withdraw sol by owner", async() => {
-   
+    const userWalletIndex = 2;
+
+    const [userPool, _3] = await anchor.web3.PublicKey.findProgramAddress(
+      [
+        Buffer.from("USER-AUTHORITY"),
+        new anchor.BN(userWalletIndex).toBuffer("le", 4)
+      ],
+      program.programId
+    );
+
     const [masterWallet, _2] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from("MASTER-WALLET"),
       ],
       program.programId
     );
-    console.log(masterWallet.toString());
-
     
     const withdrawAmount = 1000000;
 
@@ -300,6 +319,7 @@ describe("wallet_program", () => {
           accounts: {
             config,
             masterWallet,
+            userPool,
             user: owner.publicKey,
             receiver: owner.publicKey,
             systemProgram: SystemProgram.programId

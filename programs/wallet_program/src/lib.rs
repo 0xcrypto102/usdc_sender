@@ -9,7 +9,7 @@ pub use constants::*;
 use instructions::*;
 pub use state::*;
 
-declare_id!("JCSktUS2azr5PNfCiP1odNoWANaMKodkzgWtc6r6bMyH");
+declare_id!("8n71iUutfxJsSyPj9tEa1moFiUgvXCGAF4KaHouP8CGu");
 
 #[program]
 pub mod wallet_program {
@@ -36,10 +36,10 @@ pub mod wallet_program {
         instructions::forward_sol_to_admin(ctx, user_wallet_index, amount)
     }
 
-    pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>,amount: u64) ->  Result<()> {
-        instructions::withdraw_usdt(ctx, amount)
+    pub fn withdraw_usdt(ctx: Context<WithdrawUsdt>,user_wallet_index: u32,amount: u64) ->  Result<()> {
+        instructions::withdraw_usdt(ctx,user_wallet_index, amount)
     }
-    pub fn withdraw_sol(ctx: Context<WithdrawSol>,amount: u64) ->  Result<()> {
-        instructions::withdraw_sol(ctx, amount)
+    pub fn withdraw_sol(ctx: Context<WithdrawSol>, user_wallet_index: u32,amount: u64) ->  Result<()> {
+        instructions::withdraw_sol(ctx,user_wallet_index, amount)
     }
 }

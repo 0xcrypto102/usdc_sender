@@ -5,14 +5,18 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-wallet_program = "8n71iUutfxJsSyPj9tEa1moFiUgvXCGAF4KaHouP8CGu"
+wallet_program = "3nz3hhduywa9ucRHn8nesYThQTXrjbiVMBn3Gf5NZcSA"
+
+[programs.mainnet]
+wallet_program = "RB57sATNhML6QK289L8gmLekytJxgzwxFS8UN2WsnWB"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
-wallet = "/root/.config/solana/id.json"
+cluster = "https://palpable-small-research.solana-mainnet.quiknode.pro/6560ff623d16431ae52c578a1544033913f29174/"
+# cluster = "devnet"
+wallet = "/root/.config/solana/hades.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

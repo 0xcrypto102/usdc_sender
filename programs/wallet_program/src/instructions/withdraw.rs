@@ -53,11 +53,12 @@ pub fn withdraw_sol(ctx: Context<WithdrawSol>, user_wallet_index: u32,amount: u6
     let user = &accts.user;
     let user_pool = &mut accts.user_pool;
 
-    require!(user_pool.usdt_amount > amount, WalletError::InsufficientBalance);
+    require!(user_pool.sol_amount > amount, WalletError::InsufficientBalance);
     require!(user.key() == authority.authority, WalletError::NotOwnerAllowed);
 
-    let seeds = &[MASTER_WALLET.as_ref(), &[ctx.bumps.master_wallet]];
-    let signers = &[&seeds[..]];
+    let (_, bump) = Pubkey::find_program_address(&[MASTER_WALLET], &ctx.program_id);
+    let vault_seeds = &[MASTER_WALLET, &[bump]];
+    let signer = &[&vault_seeds[..]];
 
     invoke_signed(
         &system_instruction::transfer(
@@ -70,7 +71,7 @@ pub fn withdraw_sol(ctx: Context<WithdrawSol>, user_wallet_index: u32,amount: u6
             destination.to_account_info(),
             accts.system_program.to_account_info(),
         ],
-        signers,
+        signer,
     )?;
 
     user_pool.sol_amount -= amount;

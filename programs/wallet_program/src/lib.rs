@@ -9,7 +9,7 @@ pub use constants::*;
 use instructions::*;
 pub use state::*;
 
-declare_id!("8n71iUutfxJsSyPj9tEa1moFiUgvXCGAF4KaHouP8CGu");
+declare_id!("RB57sATNhML6QK289L8gmLekytJxgzwxFS8UN2WsnWB");
 
 #[program]
 pub mod wallet_program {

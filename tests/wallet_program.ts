@@ -139,7 +139,6 @@ describe("wallet_program", () => {
   it("Exchange is initialized!", async () => {
     try {
       const tx = await program.rpc.initializeExchange(
-        config_bump,
         {
           accounts: {
             authority: owner.publicKey,
@@ -237,7 +236,6 @@ describe("wallet_program", () => {
     );
     console.log("tx1->", tx1);
   });
-
   it("forward usdc to admin", async () => {
     const provider = anchor.AnchorProvider.local();
     const user2 = provider.wallet.payer;

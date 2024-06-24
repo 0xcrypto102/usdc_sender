@@ -178,7 +178,7 @@ pub struct InitializeExchangeUsdc<'info> {
 
     #[account(
         mut, 
-        seeds = [EXCHANGE_CONFIG], 
+        seeds = [CONFIG], 
         bump
     )]
     pub config: Box<Account<'info, Config>>,
